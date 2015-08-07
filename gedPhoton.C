@@ -17,7 +17,7 @@
 Double_t getDR( Double_t eta1, Double_t phi1, Double_t eta2, Double_t phi2);
 Double_t getDPHI( Double_t phi1, Double_t phi2);
 Double_t getDETA(Double_t eta1, Double_t eta2);
-void gedPhotonMacros(const char* hiForestfileName = "HiForest.root", const char* outputFileName = "gedPhoton.root");
+void gedPhoton(const char* hiForestfileName = "HiForest.root", const char* outputFileName = "gedPhoton.root");
 std::vector<TH1*> gedPhotonAnalyzer(TFile* inputFile, const char* treePath);
 
 const int MAXGENPARTICLES = 50000;  // number of gen particles can be large
@@ -30,7 +30,7 @@ const double cutptRECO = 15;
 
 const int numHistos = 31;
 
-void gedPhotonMacros(const char* hiForestfileName, const char* outputFileName)
+void gedPhoton(const char* hiForestfileName, const char* outputFileName)
 {
     TFile* inputFile = new TFile(hiForestfileName, "READ");
     std::cout << "input HiForest : " << inputFile->GetName() << std::endl;
@@ -524,17 +524,17 @@ int main(int argc, char** argv)
 {
     if(argc == 1)
     {
-        gedPhotonMacros();
+        gedPhoton();
         return 0;
     }
     else if(argc == 2)
     {
-        gedPhotonMacros(argv[1]);
+        gedPhoton(argv[1]);
         return 0;
     }
     else if(argc == 3)
     {
-        gedPhotonMacros(argv[1], argv[2]);
+        gedPhoton(argv[1], argv[2]);
         return 0;
     }
     else
