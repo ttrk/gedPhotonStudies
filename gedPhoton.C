@@ -17,19 +17,20 @@
 Double_t getDR( Double_t eta1, Double_t phi1, Double_t eta2, Double_t phi2);
 Double_t getDPHI( Double_t phi1, Double_t phi2);
 Double_t getDETA(Double_t eta1, Double_t eta2);
-void gedPhoton(const char* hiForestfileName = "HiForest.root", const char* outputFileName = "gedPhoton.root");
+void gedPhotonMacros(const char* hiForestfileName = "HiForest.root", const char* outputFileName = "gedPhoton.root");
 std::vector<TH1*> gedPhotonAnalyzer(TFile* inputFile, const char* treePath);
 
 const int MAXGENPARTICLES = 50000;  // number of gen particles can be large
 const int MAXPHOTONS = 500;
 const int PDG_PHOTON = 22;
+const int cutmcStatus = 1;
 const double cutdeltaR = 0.2; // 0.3    // cut for matching gen and reco. particles
 const double cutptGEN  = 15;
 const double cutptRECO = 15;
 
 const int numHistos = 31;
 
-void gedPhoton(const char* hiForestfileName, const char* outputFileName)
+void gedPhotonMacros(const char* hiForestfileName, const char* outputFileName)
 {
     TFile* inputFile = new TFile(hiForestfileName, "READ");
     std::cout << "input HiForest : " << inputFile->GetName() << std::endl;
@@ -72,14 +73,17 @@ std::vector<TH1*> gedPhotonAnalyzer(TFile* inputFile, const char* treePath)
     std::vector<float>* mcEta=0;
     std::vector<float>* mcPhi=0;
     std::vector<int>*   mcPID=0;
+    std::vector<int>*   mcStatus=0;
     std::vector<float>* mcCalIsoDR04=0;
     std::vector<float>* mcTrkIsoDR04=0;
 
+    ggHiNtuplizerTree->SetBranchAddress("nMC",&nMC);
     ggHiNtuplizerTree->SetBranchAddress("nMC",&nMC);
     ggHiNtuplizerTree->SetBranchAddress("mcPt",&mcPt);
     ggHiNtuplizerTree->SetBranchAddress("mcEta",&mcEta);
     ggHiNtuplizerTree->SetBranchAddress("mcPhi",&mcPhi);
     ggHiNtuplizerTree->SetBranchAddress("mcPID",&mcPID);
+    ggHiNtuplizerTree->SetBranchAddress("mcStatus",&mcStatus);
     ggHiNtuplizerTree->SetBranchAddress("mcCalIsoDR04",&mcCalIsoDR04);
     ggHiNtuplizerTree->SetBranchAddress("mcTrkIsoDR04",&mcTrkIsoDR04);
 
@@ -123,7 +127,7 @@ std::vector<TH1*> gedPhotonAnalyzer(TFile* inputFile, const char* treePath)
         }
     }
 
-    const int numCentBins = 22;
+    const int numCentBins = 11;
     const int maxCent     = 220;
     double CentBins_energyScale[numCentBins];     // upper edges of energy scale histograms
     double energyScale_cent[3][numCentBins];      // energyScale[0][] = sum of energy scales
@@ -161,39 +165,40 @@ std::vector<TH1*> gedPhotonAnalyzer(TFile* inputFile, const char* treePath)
         }
     }
 
+    TH1::SetDefaultSumw2();
     // histograms for RECO photons
     TH1D* h[numHistos];
-    h[0] = new TH1D("recoPhotons",         "RECO photons;p_{T} (GeV)",200,0,200);
-    h[1] = new TH1D("recoPhotons_matched", "matched RECO photons (matched to GEN);p_{T} (GeV)",200,0,200);
-    h[2] = new TH1D("recoPhotons_fake",    "fake RECO photons (not matched to GEN);p_{T} (GeV)",200,0,200);
-    h[3] = new TH1D("genPhotons",          "GEN photons;p_{T} (GeV)",200,0,200);
-    h[4] = new TH1D("genPhotons_matched",  "matched GEN photons (matched to RECO);p_{T} (GeV)",200,0,200);
-    h[5] = new TH1D("genPhotons_missing",  "missing GEN photons (not matched to RECO);p_{T} (GeV)",200,0,200);
+    h[0] = new TH1D("recoPhotons",         "RECO photons;p_{T} (GeV)",100,0,200);
+    h[1] = new TH1D("recoPhotons_matched", "matched RECO photons (matched to GEN);p_{T} (GeV)",100,0,200);
+    h[2] = new TH1D("recoPhotons_fake",    "fake RECO photons (not matched to GEN);p_{T} (GeV)",100,0,200);
+    h[3] = new TH1D("genPhotons",          "GEN photons;p_{T} (GeV)",100,0,200);
+    h[4] = new TH1D("genPhotons_matched",  "matched GEN photons (matched to RECO);p_{T} (GeV)",100,0,200);
+    h[5] = new TH1D("genPhotons_missing",  "missing GEN photons (not matched to RECO);p_{T} (GeV)",100,0,200);
     h[6] = new TH1D("energyScale_GENpT",     "energy scale;GEN p_{T} (GeV);<RECO p_{T} / GEN p_{T}>",                numGENptBins,0,maxGENpt);
     h[7] = new TH1D("widthEnergyScale_GENpT","width of energy scale;GEN p_{T} (GeV);#sigma(RECO p_{T} / GEN p_{T})", numGENptBins,0,maxGENpt);
     h[8] = new TH1D("energyScale_cent",      "energy scale;hiBin;<RECO p_{T} / GEN p_{T}>",numCentBins,0,maxCent);
     h[9] = new TH1D("widthEnergyScale_cent", "width of energy scale;hiBin;#sigma(RECO p_{T} / GEN p_{T})",numCentBins,0,maxCent);
-    h[10] = new TH1D("deltaPhi",       "#phi^{RECO} - #phi^{GEN};#Delta#phi",                    100,-cutdeltaR, cutdeltaR);
-    h[11] = new TH1D("deltaEta",       "#eta^{RECO} - #eta^{GEN};#Delta#eta",                    100,-cutdeltaR, cutdeltaR);
-    h[12] = new TH1D("deltaR",        "#DeltaR = #sqrt{#Delta#eta^{2}+#Delta#phi^{2}};#DeltaR",  100,0, cutdeltaR);
+    h[10] = new TH1D("deltaPhi",       "#phi^{RECO} - #phi^{GEN};#Delta#phi",                    100,-cutdeltaR/2, cutdeltaR/2);
+    h[11] = new TH1D("deltaEta",       "#eta^{RECO} - #eta^{GEN};#Delta#eta",                    100,-cutdeltaR/2, cutdeltaR/2);
+    h[12] = new TH1D("deltaR",        "#DeltaR = #sqrt{#Delta#eta^{2}+#Delta#phi^{2}};#DeltaR",  100,0, cutdeltaR/2);
     h[13] = new TH1D("deltaPhi_cent",      "#Delta#phi = #phi^{RECO} - #phi^{GEN};hiBin;<|#Delta#phi|>",     numCentBins, 0, maxCent);
     h[14] = new TH1D("deltaEta_cent",      "#Delta#eta = #eta^{RECO} - #eta^{GEN};hiBin;<|#Delta#eta|>",     numCentBins, 0, maxCent);
     h[15] = new TH1D("deltaR_cent",        "#DeltaR = #sqrt{#Delta#eta^{2}+#Delta#phi^{2}};hiBin;<#DeltaR>", numCentBins, 0, maxCent);
     h[16] = new TH1D("widthDeltaPhi_cent", "#sigma(|#Delta#phi|);hiBin;#sigma(|#Delta#phi|)",   numCentBins, 0, maxCent);
     h[17] = new TH1D("widthDeltaEta_cent", "#sigma(|#Delta#eta|);hiBin;#sigma(|#Delta#eta|)",   numCentBins, 0, maxCent);
     h[18] = new TH1D("widthDeltaR_cent",   "#sigma(#DeltaR)   ;hiBin;#sigma(#DeltaR)",          numCentBins, 0, maxCent);
-    h[19] = new TH1D("trkIso",            "#DeltaE_{track}^{ISO} = E_{track}^{ISO}(RECO) - E_{track}^{ISO}(GEN);#DeltaE_{track}^{ISO}", 200,-100, 100);
-    h[20] = new TH1D("calIso",            "#DeltaE_{calo}^{ISO} = E_{calo}^{ISO}(RECO) - E_{calo}^{ISO}(GEN);#DeltaE_{calo}^{ISO}",     200,-100, 100);
+    h[19] = new TH1D("trkIso",            "#DeltaE_{track}^{ISO} = E_{track}^{ISO}(RECO) - E_{track}^{ISO}(GEN);#DeltaE_{track}^{ISO}", 100,-100, 100);
+    h[20] = new TH1D("calIso",            "#DeltaE_{calo}^{ISO} = E_{calo}^{ISO}(RECO) - E_{calo}^{ISO}(GEN);#DeltaE_{calo}^{ISO}",     100,-100, 100);
     h[21] = new TH1D("trkIso_ratio",      "E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN);E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN)", 100, -5, 5);
     h[22] = new TH1D("calIso_ratio",      "E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN);E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN)",     100, -5, 5);
-    h[23] = new TH1D("trkIso_ratio_GENpT",      ";GEN p_{T} (GeV);<E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN)>", numGENptBins,0,maxGENpt);
-    h[24] = new TH1D("calIso_ratio_GENpT",      ";GEN p_{T} (GeV);<E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN)>",   numGENptBins,0,maxGENpt);
-    h[25] = new TH1D("widthTrkIso_ratio_GENpT", ";GEN p_{T} (GeV);#sigma(E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN))", numGENptBins,0,maxGENpt);
-    h[26] = new TH1D("widthCalIso_ratio_GENpT", ";GEN p_{T} (GeV);#sigma(E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN))",   numGENptBins,0,maxGENpt);
-    h[27] = new TH1D("trkIso_ratio_cent",       ";hiBin;<E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN)>", numCentBins,0,maxCent);
-    h[28] = new TH1D("calIso_ratio_cent",       ";hiBin;<E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN)>",   numCentBins,0,maxCent);
-    h[29] = new TH1D("widthTrkIso_ratio_cent",  ";hiBin;#sigma(E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN))", numCentBins,0,maxCent);
-    h[30] = new TH1D("widthCalIso_ratio_cent",  ";hiBin;#sigma(E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN))",   numCentBins,0,maxCent);
+    h[23] = new TH1D("trkIso_ratio_GENpT",      "<E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN)>;GEN p_{T} (GeV);<E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN)>", numGENptBins,0,maxGENpt);
+    h[24] = new TH1D("calIso_ratio_GENpT",      "<E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN)>;GEN p_{T} (GeV);<E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN)>",     numGENptBins,0,maxGENpt);
+    h[25] = new TH1D("widthTrkIso_ratio_GENpT", "#sigma(E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN));GEN p_{T} (GeV);#sigma(E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN))", numGENptBins,0,maxGENpt);
+    h[26] = new TH1D("widthCalIso_ratio_GENpT", "#sigma(E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN));GEN p_{T} (GeV);#sigma(E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN))",     numGENptBins,0,maxGENpt);
+    h[27] = new TH1D("trkIso_ratio_cent",       "<E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN)>;hiBin;<E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN)>", numCentBins,0,maxCent);
+    h[28] = new TH1D("calIso_ratio_cent",       "<E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN)>;hiBin;<E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN)>",     numCentBins,0,maxCent);
+    h[29] = new TH1D("widthTrkIso_ratio_cent",  "#sigma(E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN));hiBin;#sigma(E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN))", numCentBins,0,maxCent);
+    h[30] = new TH1D("widthCalIso_ratio_cent",  "#sigma(E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN));hiBin;#sigma(E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN))",     numCentBins,0,maxCent);
 
     std::cout << "entering event loop" << std::endl;
     Long64_t entries = ggHiNtuplizerTree->GetEntries();
@@ -244,7 +249,7 @@ std::vector<TH1*> gedPhotonAnalyzer(TFile* inputFile, const char* treePath)
             for (int j=0; j<nMC; ++j)
             {
                 deltaRtmp = getDR(phoEta->at(i), phoPhi->at(i), mcEta->at(j), mcPhi->at(j));
-                passedGENselection = (mcPID->at(j) == PDG_PHOTON) && (mcPt->at(j) > cutptGEN);
+                passedGENselection = (mcPID->at(j) == PDG_PHOTON) && (mcPt->at(j) > cutptGEN) && (mcStatus->at(j) == cutmcStatus);
                 passedDR           = (deltaRtmp < cutdeltaR);
 
                 if (passedGENselection && passedDR)
@@ -268,8 +273,12 @@ std::vector<TH1*> gedPhotonAnalyzer(TFile* inputFile, const char* treePath)
                 deltaR  [i]  = deltaRMin;
                 deltaTrkIso[i] = pho_trackIsoR4PtCut20->at(i) - mcTrkIsoDR04->at(j);
                 deltaCalIso[i] = (pho_ecalClusterIsoR4->at(i)+pho_hcalRechitIsoR4->at(i)) - mcCalIsoDR04->at(j);
-                ratioTrkIso[i] = pho_trackIsoR4PtCut20->at(i) / mcTrkIsoDR04->at(j);
-                ratioCalIso[i] = (pho_ecalClusterIsoR4->at(i)+pho_hcalRechitIsoR4->at(i)) / mcCalIsoDR04->at(j);
+                ratioTrkIso[i] = 0;
+                if(mcTrkIsoDR04->at(j)!=0)
+                    ratioTrkIso[i] = pho_trackIsoR4PtCut20->at(i) / mcTrkIsoDR04->at(j);
+                ratioCalIso[i] = 0;
+                if(mcCalIsoDR04->at(j)!=0)
+                    ratioCalIso[i] = (pho_ecalClusterIsoR4->at(i)+pho_hcalRechitIsoR4->at(i)) / mcCalIsoDR04->at(j);
 
                 // energy scale as fnc. of GEN pT
                 for(int r=0; r < numGENptBins; ++r){
@@ -369,7 +378,7 @@ std::vector<TH1*> gedPhotonAnalyzer(TFile* inputFile, const char* treePath)
             isMiss[i]=true;
 
             bool passedGENselection;      // selections for GEN photon
-            passedGENselection = (mcPID->at(i) == PDG_PHOTON) && (mcPt->at(i) > cutptGEN);
+            passedGENselection = (mcPID->at(i) == PDG_PHOTON) && (mcPt->at(i) > cutptGEN) && (mcStatus->at(i) == cutmcStatus);
 
             if(passedGENselection)
             {
@@ -402,7 +411,9 @@ std::vector<TH1*> gedPhotonAnalyzer(TFile* inputFile, const char* treePath)
             mean          = energyScale[0][r]/n;
             meanOfSquares = energyScale[1][r]/n;
             h[6]->SetBinContent(r+1,mean);
+            h[6]->SetBinError(r+1,mean/TMath::Sqrt(n));
             h[7]->SetBinContent(r+1,TMath::Sqrt(meanOfSquares-mean*mean));
+            h[7]->SetBinError(r+1,TMath::Sqrt(meanOfSquares-mean*mean)/TMath::Sqrt(n));
         }
 
         // isolation ratios as fnc. of GEN pT
@@ -411,7 +422,9 @@ std::vector<TH1*> gedPhotonAnalyzer(TFile* inputFile, const char* treePath)
             mean          = trkIso_ratio_GENpT[0][r]/n;
             meanOfSquares = trkIso_ratio_GENpT[1][r]/n;
             h[23]->SetBinContent(r+1,mean);
+            h[23]->SetBinError(r+1,mean/TMath::Sqrt(n));
             h[25]->SetBinContent(r+1,TMath::Sqrt(meanOfSquares-mean*mean));
+            h[25]->SetBinError(r+1,TMath::Sqrt(meanOfSquares-mean*mean)/TMath::Sqrt(n));
         }
 
         n = calIso_ratio_GENpT[2][r];
@@ -419,7 +432,9 @@ std::vector<TH1*> gedPhotonAnalyzer(TFile* inputFile, const char* treePath)
             mean          = calIso_ratio_GENpT[0][r]/n;
             meanOfSquares = calIso_ratio_GENpT[1][r]/n;
             h[24]->SetBinContent(r+1,mean);
+            h[24]->SetBinError(r+1,mean/TMath::Sqrt(n));
             h[26]->SetBinContent(r+1,TMath::Sqrt(meanOfSquares-mean*mean));
+            h[26]->SetBinError(r+1,TMath::Sqrt(meanOfSquares-mean*mean)/TMath::Sqrt(n));
         }
     }
 
@@ -435,7 +450,9 @@ std::vector<TH1*> gedPhotonAnalyzer(TFile* inputFile, const char* treePath)
             mean          = energyScale_cent[0][r]/n;
             meanOfSquares = energyScale_cent[1][r]/n;
             h[8]->SetBinContent(r+1,mean);
+            h[8]->SetBinError(r+1,mean/TMath::Sqrt(n));
             h[9]->SetBinContent(r+1,TMath::Sqrt(meanOfSquares-mean*mean));
+            h[9]->SetBinError(r+1,TMath::Sqrt(meanOfSquares-mean*mean)/TMath::Sqrt(n));
         }
 
         // position resolution as fnc. of centrality
@@ -444,7 +461,9 @@ std::vector<TH1*> gedPhotonAnalyzer(TFile* inputFile, const char* treePath)
             mean          = deltaPhi_cent[0][r]/n;
             meanOfSquares = deltaPhi_cent[1][r]/n;
             h[13]->SetBinContent(r+1,mean);
+            h[13]->SetBinError(r+1,mean/TMath::Sqrt(n));
             h[16]->SetBinContent(r+1,TMath::Sqrt(meanOfSquares-mean*mean));
+            h[16]->SetBinError(r+1,TMath::Sqrt(meanOfSquares-mean*mean)/TMath::Sqrt(n));
         }
 
         n = deltaEta_cent[2][r];
@@ -452,7 +471,9 @@ std::vector<TH1*> gedPhotonAnalyzer(TFile* inputFile, const char* treePath)
             mean          = deltaEta_cent[0][r]/n;
             meanOfSquares = deltaEta_cent[1][r]/n;
             h[14]->SetBinContent(r+1,mean);
+            h[14]->SetBinError(r+1,mean/TMath::Sqrt(n));
             h[17]->SetBinContent(r+1,TMath::Sqrt(meanOfSquares-mean*mean));
+            h[17]->SetBinError(r+1,TMath::Sqrt(meanOfSquares-mean*mean)/TMath::Sqrt(n));
         }
 
         n = deltaR_cent[2][r];
@@ -460,7 +481,9 @@ std::vector<TH1*> gedPhotonAnalyzer(TFile* inputFile, const char* treePath)
             mean          = deltaR_cent[0][r]/n;
             meanOfSquares = deltaR_cent[1][r]/n;
             h[15]->SetBinContent(r+1,mean);
+            h[15]->SetBinError(r+1,mean/TMath::Sqrt(n));
             h[18]->SetBinContent(r+1,TMath::Sqrt(meanOfSquares-mean*mean));
+            h[18]->SetBinError(r+1,TMath::Sqrt(meanOfSquares-mean*mean)/TMath::Sqrt(n));
         }
         // isolation ratios as fnc. of centrality
         n = trkIso_ratio_cent[2][r];
@@ -468,7 +491,9 @@ std::vector<TH1*> gedPhotonAnalyzer(TFile* inputFile, const char* treePath)
             mean          = trkIso_ratio_cent[0][r]/n;
             meanOfSquares = trkIso_ratio_cent[1][r]/n;
             h[27]->SetBinContent(r+1,mean);
+            h[27]->SetBinError(r+1,mean/TMath::Sqrt(n));
             h[29]->SetBinContent(r+1,TMath::Sqrt(meanOfSquares-mean*mean));
+            h[29]->SetBinError(r+1,TMath::Sqrt(meanOfSquares-mean*mean)/TMath::Sqrt(n));
         }
 
         n = calIso_ratio_cent[2][r];
@@ -476,7 +501,9 @@ std::vector<TH1*> gedPhotonAnalyzer(TFile* inputFile, const char* treePath)
             mean          = calIso_ratio_cent[0][r]/n;
             meanOfSquares = calIso_ratio_cent[1][r]/n;
             h[28]->SetBinContent(r+1,mean);
+            h[28]->SetBinError(r+1,mean/TMath::Sqrt(n));
             h[30]->SetBinContent(r+1,TMath::Sqrt(meanOfSquares-mean*mean));
+            h[30]->SetBinError(r+1,TMath::Sqrt(meanOfSquares-mean*mean)/TMath::Sqrt(n));
         }
     }
 
@@ -497,17 +524,17 @@ int main(int argc, char** argv)
 {
     if(argc == 1)
     {
-        gedPhoton();
+        gedPhotonMacros();
         return 0;
     }
     else if(argc == 2)
     {
-        gedPhoton(argv[1]);
+        gedPhotonMacros(argv[1]);
         return 0;
     }
     else if(argc == 3)
     {
-        gedPhoton(argv[1], argv[2]);
+        gedPhotonMacros(argv[1], argv[2]);
         return 0;
     }
     else
