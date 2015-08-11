@@ -1,5 +1,6 @@
 /*
  * macro to study different photon Reconstruction algorithms
+ * version of gedPhoton.C to match pT binning convention in http://arxiv.org/pdf/1201.3093v2.pdf
  * */
 
 #include <TFile.h>
@@ -52,8 +53,8 @@ void gedPhoton(const char* hiForestfileName, const char* outputFileName)
     float eta_lt[5] = {999999, cutetaBarrel,       999999, cutetaEndCap,       999999};
     int mcMomPID_gt[5] = {-999999, 21, -999999,     22, 110};
     int mcMomPID_lt[5] = { 999999, 23,      22, 999999, 112};
-    int hiBin_gt[5] = {-999999,  0, 20,  60,     100};
-    int hiBin_lt[5] = { 999999, 20, 60, 100, 9999999};
+    int hiBin_gt[4] = {-999999,  0, 20,     100};   // int hiBin_gt[5] = {-999999,  0, 20,  60,     100};
+    int hiBin_lt[4] = { 999999, 20, 60, 9999999};   // int hiBin_lt[5] = { 999999, 20, 60, 100, 9999999};
     float ptGEN[5] = {20, 15, 30, 40, 60};
 
     std::vector<TH1*> histos[2][5][5][5][5];
@@ -68,7 +69,7 @@ void gedPhoton(const char* hiForestfileName, const char* outputFileName)
     {
         for (int k=0; k<5; ++k)
         {
-            for (int l=0; l<5; ++l)
+            for (int l=0; l<4; ++l)
             {
                 for (int m=0; m<5; ++m)
                 {
@@ -113,8 +114,8 @@ void gedPhoton(const char* hiForestfileName, const char* outputFileName)
     const char* mcMomPID_hname[5] = {"","_prompt", "_frag", "_decay", "_decaypi0"};
     const char* mcMomPID_title[5] = {"",", #gamma^{prompt} (mcMomPID==22)", ", #gamma^{frag} (abs(mcMomPID)<22)", ", #gamma^{decay} (abs(mcMomPID)>22)", ", #gamma^{decay}_{#pi^{0}} (mcMomPID==111)"};
 
-    const char* hiBin_hname[5] = {"","_hiBin20", "_hiBin60", "_hiBin100", "_hiBin200"};
-    const char* hiBin_title[5] = {"",", hiBin:0-20", ", hiBin:20-60", ", hiBin:60-100", ", hiBin:100-200"};
+    const char* hiBin_hname[4] = {"","_hiBin20", "_hiBin60", "_hiBin200"};//{"","_hiBin20", "_hiBin60", "_hiBin100", "_hiBin200"};
+    const char* hiBin_title[4] = {"",", hiBin:0-20", ", hiBin:20-60", ", hiBin:60-200"};//{"",", hiBin:0-20", ", hiBin:20-60", ", hiBin:60-100", ", hiBin:100-200"};
 
     const char* ptGEN_hname[5] = {"","_pt15", "_pt30", "_pt40", "_pt60"};
     const char* ptGEN_title[5] = {"",", p_{T}^{#gamma}(GEN)>15", ", p_{T}^{#gamma}(GEN)>30", ", p_{T}^{#gamma}(GEN)>40", ", p_{T}^{#gamma}(GEN)>60"};
@@ -125,7 +126,7 @@ void gedPhoton(const char* hiForestfileName, const char* outputFileName)
     {
         for (int k=0; k<5; ++k)
         {
-            for (int l=0; l<5; ++l){
+            for (int l=0; l<4; ++l){
 
                 for (int m=0; m<5; ++m)
                 {
@@ -232,8 +233,8 @@ std::vector<TH1*> gedPhotonAnalyzer(TFile* inputFile, const char* treePath,
 //    ggHiNtuplizerTree->SetBranchAddress("phoSigmaIPhiIPhi_2012",&phoSigmaIPhiIPhi);
 
     // GEN pT dependent variables
-    const int numGENptBins = 20;
-    const double maxGENpt  = 200;
+    const int numGENptBins = 5;//    const int numGENptBins = 20;
+    const double maxGENpt  = 80;//    const double maxGENpt  = 200;
     double GENptBins_energyScale[numGENptBins];     // upper edges of energy scale histograms
     double energyScale[3][numGENptBins];            // energyScale[0][] = sum of energy scales
                                                     // energyScale[1][] = sum of square of energy scales
@@ -259,13 +260,14 @@ std::vector<TH1*> gedPhotonAnalyzer(TFile* inputFile, const char* treePath,
                                                      // fakeRatio_GENpT[1][] = empty
                                                      // fakeRatio_GENpT[2][] = # of all  RECO photons
 
+    double pTBins_12013093v2[5]={25, 30, 40, 50, 80};
     for (int i=0; i<numGENptBins; ++i)
     {
-        GENptBins_energyScale[i] = maxGENpt/numGENptBins*(i+1);
-        GENptBins_Iso_ratio  [i] = maxGENpt/numGENptBins*(i+1);
-        GENptBins_Iso        [i] = maxGENpt/numGENptBins*(i+1);
-        GENptBins_matchRatio [i] = maxGENpt/numGENptBins*(i+1);
-        RECOptBins_fakeRatio  [i] = maxGENpt/numGENptBins*(i+1);
+        GENptBins_energyScale[i] = pTBins_12013093v2[i]; //maxGENpt/numGENptBins*(i+1);
+        GENptBins_Iso_ratio  [i] = pTBins_12013093v2[i]; //maxGENpt/numGENptBins*(i+1);
+        GENptBins_Iso        [i] = pTBins_12013093v2[i]; //maxGENpt/numGENptBins*(i+1);
+        GENptBins_matchRatio [i] = pTBins_12013093v2[i]; //maxGENpt/numGENptBins*(i+1);
+        RECOptBins_fakeRatio  [i] = pTBins_12013093v2[i]; //maxGENpt/numGENptBins*(i+1);
 
         for (int j=0; j<3; ++j){
             energyScale[j][i]=0;
@@ -279,8 +281,8 @@ std::vector<TH1*> gedPhotonAnalyzer(TFile* inputFile, const char* treePath,
     }
 
     // centrality dependent variables
-    const int numCentBins = 11;
-    const int maxCent     = 220;
+    const int numCentBins = 4; //11;
+    const int maxCent     = 200; //220;
     double CentBins_energyScale[numCentBins];     // upper edges of energy scale histograms
     double energyScale_cent[3][numCentBins];      // energyScale[0][] = sum of energy scales
                                                   // energyScale[1][] = sum of square of energy scales
@@ -311,14 +313,15 @@ std::vector<TH1*> gedPhotonAnalyzer(TFile* inputFile, const char* treePath,
     double CentBins_fakeRatio[numCentBins];     // upper edges of fake rate histograms
     double fakeRatio_cent[3][numCentBins];
 
+    double CentBins_12013093v2[4] = {20, 60, 100, 200};
     for (int i=0; i<numCentBins; ++i)
     {
-        CentBins_energyScale[i] = (double)maxCent/numCentBins*(i+1);
-        CentBins_pos_res    [i] = (double)maxCent/numCentBins*(i+1);
-        CentBins_Iso_ratio  [i] = (double)maxCent/numCentBins*(i+1);
-        CentBins_Iso        [i] = (double)maxCent/numCentBins*(i+1);
-        CentBins_matchRatio [i] = (double)maxCent/numCentBins*(i+1);
-        CentBins_fakeRatio  [i] = (double)maxCent/numCentBins*(i+1);
+        CentBins_energyScale[i] = CentBins_12013093v2[i];  //(double)maxCent/numCentBins*(i+1);
+        CentBins_pos_res    [i] = CentBins_12013093v2[i];  //(double)maxCent/numCentBins*(i+1);
+        CentBins_Iso_ratio  [i] = CentBins_12013093v2[i];  //(double)maxCent/numCentBins*(i+1);
+        CentBins_Iso        [i] = CentBins_12013093v2[i];  //(double)maxCent/numCentBins*(i+1);
+        CentBins_matchRatio [i] = CentBins_12013093v2[i];  //(double)maxCent/numCentBins*(i+1);
+        CentBins_fakeRatio  [i] = CentBins_12013093v2[i];  //(double)maxCent/numCentBins*(i+1);
 
         // initialization
         for (int j=0; j<3; ++j){
@@ -362,6 +365,9 @@ std::vector<TH1*> gedPhotonAnalyzer(TFile* inputFile, const char* treePath,
         }
     }
 
+
+    const double GENptBins_arr[6] = {20, 25, 30, 40, 50, 80};
+    const double CentBins_arr[5]  = {0, 20, 60, 100, 200};
     TH1::SetDefaultSumw2();
     // histograms for photons
     TH1D* h[numHistos];
@@ -371,51 +377,47 @@ std::vector<TH1*> gedPhotonAnalyzer(TFile* inputFile, const char* treePath,
     h[3] = new TH1D("genPhotons",          "GEN photons;p_{T} (GeV)",100,0,200);
     h[4] = new TH1D("genPhotons_matched",  "matched GEN photons (matched to RECO);p_{T} (GeV)",100,0,200);
     h[5] = new TH1D("genPhotons_missing",  "missing GEN photons (not matched to RECO);p_{T} (GeV)",100,0,200);
-    h[6] = new TH1D("energyScale_GENpT",     "energy scale;GEN p_{T} (GeV);<RECO p_{T} / GEN p_{T}>",                numGENptBins,0,maxGENpt);
-    h[7] = new TH1D("widthEnergyScale_GENpT","width of energy scale;GEN p_{T} (GeV);#sigma(RECO p_{T} / GEN p_{T})", numGENptBins,0,maxGENpt);
-    h[8] = new TH1D("energyScale_cent",      "energy scale;hiBin;<RECO p_{T} / GEN p_{T}>",numCentBins,0,maxCent);
-    h[9] = new TH1D("widthEnergyScale_cent", "width of energy scale;hiBin;#sigma(RECO p_{T} / GEN p_{T})",numCentBins,0,maxCent);
+    h[6] = new TH1D("energyScale_GENpT",     "energy scale;GEN p_{T} (GeV);<RECO p_{T} / GEN p_{T}>",                numGENptBins, GENptBins_arr);
+    h[7] = new TH1D("widthEnergyScale_GENpT","width of energy scale;GEN p_{T} (GeV);#sigma(RECO p_{T} / GEN p_{T})", numGENptBins, GENptBins_arr);
+    h[8] = new TH1D("energyScale_cent",      "energy scale;hiBin;<RECO p_{T} / GEN p_{T}>",numCentBins, CentBins_arr);
+    h[9] = new TH1D("widthEnergyScale_cent", "width of energy scale;hiBin;#sigma(RECO p_{T} / GEN p_{T})",numCentBins, CentBins_arr);
     h[10] = new TH1D("deltaPhi",       "#phi^{RECO} - #phi^{GEN};#Delta#phi",                    100,-cutdeltaR/2, cutdeltaR/2);
     h[11] = new TH1D("deltaEta",       "#eta^{RECO} - #eta^{GEN};#Delta#eta",                    100,-cutdeltaR/2, cutdeltaR/2);
     h[12] = new TH1D("deltaR",        "#DeltaR = #sqrt{#Delta#eta^{2}+#Delta#phi^{2}};#DeltaR",  100,0, cutdeltaR/2);
-    h[13] = new TH1D("deltaPhi_cent",      "#Delta#phi = #phi^{RECO} - #phi^{GEN};hiBin;<|#Delta#phi|>",     numCentBins, 0, maxCent);
-    h[14] = new TH1D("deltaEta_cent",      "#Delta#eta = #eta^{RECO} - #eta^{GEN};hiBin;<|#Delta#eta|>",     numCentBins, 0, maxCent);
-    h[15] = new TH1D("deltaR_cent",        "#DeltaR = #sqrt{#Delta#eta^{2}+#Delta#phi^{2}};hiBin;<#DeltaR>", numCentBins, 0, maxCent);
-    h[16] = new TH1D("widthDeltaPhi_cent", "#sigma(|#Delta#phi|);hiBin;#sigma(|#Delta#phi|)",   numCentBins, 0, maxCent);
-    h[17] = new TH1D("widthDeltaEta_cent", "#sigma(|#Delta#eta|);hiBin;#sigma(|#Delta#eta|)",   numCentBins, 0, maxCent);
-    h[18] = new TH1D("widthDeltaR_cent",   "#sigma(#DeltaR)   ;hiBin;#sigma(#DeltaR)",          numCentBins, 0, maxCent);
+    h[13] = new TH1D("deltaPhi_cent",      "#Delta#phi = #phi^{RECO} - #phi^{GEN};hiBin;<|#Delta#phi|>",     numCentBins, CentBins_arr);
+    h[14] = new TH1D("deltaEta_cent",      "#Delta#eta = #eta^{RECO} - #eta^{GEN};hiBin;<|#Delta#eta|>",     numCentBins, CentBins_arr);
+    h[15] = new TH1D("deltaR_cent",        "#DeltaR = #sqrt{#Delta#eta^{2}+#Delta#phi^{2}};hiBin;<#DeltaR>", numCentBins, CentBins_arr);
+    h[16] = new TH1D("widthDeltaPhi_cent", "#sigma(|#Delta#phi|);hiBin;#sigma(|#Delta#phi|)",   numCentBins, CentBins_arr);
+    h[17] = new TH1D("widthDeltaEta_cent", "#sigma(|#Delta#eta|);hiBin;#sigma(|#Delta#eta|)",   numCentBins, CentBins_arr);
+    h[18] = new TH1D("widthDeltaR_cent",   "#sigma(#DeltaR)   ;hiBin;#sigma(#DeltaR)",          numCentBins, CentBins_arr);
     h[19] = new TH1D("trkIso",            "#DeltaE_{track}^{ISO} = E_{track}^{ISO}(RECO) - E_{track}^{ISO}(GEN);#DeltaE_{track}^{ISO}", 100,-100, 100);
     h[20] = new TH1D("calIso",            "#DeltaE_{calo}^{ISO} = E_{calo}^{ISO}(RECO) - E_{calo}^{ISO}(GEN);#DeltaE_{calo}^{ISO}",     100,-100, 100);
     h[21] = new TH1D("trkIso_ratio",      "E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN);E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN)", 100, -5, 5);
     h[22] = new TH1D("calIso_ratio",      "E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN);E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN)",     100, -5, 5);
-    h[23] = new TH1D("trkIso_ratio_GENpT",      "<E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN)>;GEN p_{T} (GeV);<E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN)>", numGENptBins,0,maxGENpt);
-    h[24] = new TH1D("calIso_ratio_GENpT",      "<E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN)>;GEN p_{T} (GeV);<E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN)>",     numGENptBins,0,maxGENpt);
-    h[25] = new TH1D("widthTrkIso_ratio_GENpT", "#sigma(E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN));GEN p_{T} (GeV);#sigma(E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN))", numGENptBins,0,maxGENpt);
-    h[26] = new TH1D("widthCalIso_ratio_GENpT", "#sigma(E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN));GEN p_{T} (GeV);#sigma(E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN))",     numGENptBins,0,maxGENpt);
-    h[27] = new TH1D("trkIso_ratio_cent",       "<E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN)>;hiBin;<E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN)>", numCentBins,0,maxCent);
-    h[28] = new TH1D("calIso_ratio_cent",       "<E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN)>;hiBin;<E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN)>",     numCentBins,0,maxCent);
-    h[29] = new TH1D("widthTrkIso_ratio_cent",  "#sigma(E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN));hiBin;#sigma(E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN))", numCentBins,0,maxCent);
-    h[30] = new TH1D("widthCalIso_ratio_cent",  "#sigma(E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN));hiBin;#sigma(E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN))",     numCentBins,0,maxCent);
+    h[23] = new TH1D("trkIso_ratio_GENpT",      "<E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN)>;GEN p_{T} (GeV);<E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN)>", numGENptBins, GENptBins_arr);
+    h[24] = new TH1D("calIso_ratio_GENpT",      "<E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN)>;GEN p_{T} (GeV);<E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN)>",     numGENptBins, GENptBins_arr);
+    h[25] = new TH1D("widthTrkIso_ratio_GENpT", "#sigma(E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN));GEN p_{T} (GeV);#sigma(E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN))", numGENptBins, GENptBins_arr);
+    h[26] = new TH1D("widthCalIso_ratio_GENpT", "#sigma(E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN));GEN p_{T} (GeV);#sigma(E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN))",     numGENptBins, GENptBins_arr);
+    h[27] = new TH1D("trkIso_ratio_cent",       "<E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN)>;hiBin;<E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN)>", numCentBins, CentBins_arr);
+    h[28] = new TH1D("calIso_ratio_cent",       "<E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN)>;hiBin;<E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN)>",     numCentBins, CentBins_arr);
+    h[29] = new TH1D("widthTrkIso_ratio_cent",  "#sigma(E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN));hiBin;#sigma(E_{track}^{ISO}(RECO) / E_{track}^{ISO}(GEN))", numCentBins, CentBins_arr);
+    h[30] = new TH1D("widthCalIso_ratio_cent",  "#sigma(E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN));hiBin;#sigma(E_{calo}^{ISO}(RECO) / E_{calo}^{ISO}(GEN))",     numCentBins, CentBins_arr);
 
-    h[31] = new TH1D("trkIso_GENpT",      "<#DeltaE_{track}^{ISO} = E_{track}^{ISO}(RECO) - E_{track}^{ISO}(GEN)>;GEN p_{T} (GeV);<#DeltaE_{track}^{ISO}>", numGENptBins,0,maxGENpt);
-    h[32] = new TH1D("calIso_GENpT",      "<#DeltaE_{calo}^{ISO} = E_{calo}^{ISO}(RECO) - E_{calo}^{ISO}(GEN)>;GEN p_{T} (GeV);<#DeltaE_{calo}^{ISO}>",     numGENptBins,0,maxGENpt);
-    h[33] = new TH1D("widthTrkIso_GENpT", "#sigma(#DeltaE_{track}^{ISO} = E_{track}^{ISO}(RECO) - E_{track}^{ISO}(GEN));GEN p_{T} (GeV);#sigma(#DeltaE_{track}^{ISO})", numGENptBins,0,maxGENpt);
-    h[34] = new TH1D("widthCalIso_GENpT", "#sigma(#DeltaE_{calo}^{ISO} = E_{calo}^{ISO}(RECO) - E_{calo}^{ISO}(GEN));GEN p_{T} (GeV);#sigma(#DeltaE_{calo}^{ISO})",     numGENptBins,0,maxGENpt);
+    h[31] = new TH1D("trkIso_GENpT",      "<#DeltaE_{track}^{ISO} = E_{track}^{ISO}(RECO) - E_{track}^{ISO}(GEN)>;GEN p_{T} (GeV);<#DeltaE_{track}^{ISO}>", numGENptBins, GENptBins_arr);
+    h[32] = new TH1D("calIso_GENpT",      "<#DeltaE_{calo}^{ISO} = E_{calo}^{ISO}(RECO) - E_{calo}^{ISO}(GEN)>;GEN p_{T} (GeV);<#DeltaE_{calo}^{ISO}>",     numGENptBins, GENptBins_arr);
+    h[33] = new TH1D("widthTrkIso_GENpT", "#sigma(#DeltaE_{track}^{ISO} = E_{track}^{ISO}(RECO) - E_{track}^{ISO}(GEN));GEN p_{T} (GeV);#sigma(#DeltaE_{track}^{ISO})", numGENptBins, GENptBins_arr);
+    h[34] = new TH1D("widthCalIso_GENpT", "#sigma(#DeltaE_{calo}^{ISO} = E_{calo}^{ISO}(RECO) - E_{calo}^{ISO}(GEN));GEN p_{T} (GeV);#sigma(#DeltaE_{calo}^{ISO})",     numGENptBins, GENptBins_arr);
     h[35] = new TH1D("trkIso_cent",       "<#DeltaE_{track}^{ISO} = E_{track}^{ISO}(RECO) - E_{track}^{ISO}(GEN)>;hiBin;<#DeltaE_{track}^{ISO}>", numCentBins,0,maxCent);
     h[36] = new TH1D("calIso_cent",       "<#DeltaE_{calo}^{ISO} = E_{calo}^{ISO}(RECO) - E_{calo}^{ISO}(GEN)>;hiBin;<#DeltaE_{calo}^{ISO}>",     numCentBins,0,maxCent);
     h[37] = new TH1D("widthTrkIso_cent",  "#sigma(#DeltaE_{track}^{ISO} = E_{track}^{ISO}(RECO) - E_{track}^{ISO}(GEN));hiBin;#sigma(#DeltaE_{track}^{ISO})", numCentBins,0,maxCent);
     h[38] = new TH1D("widthCalIso_cent",  "#sigma(#DeltaE_{calo}^{ISO} = E_{calo}^{ISO}(RECO) - E_{calo}^{ISO}(GEN));hiBin;#sigma(#DeltaE_{calo}^{ISO})",     numCentBins,0,maxCent);
 
-    h[39] = new TH1D("matchRatio_GENpT",  "matching efficiency = N_{#gamma}^{GEN}(matched) / N_{#gamma}^{GEN}(all);GEN p_{T} (GeV);N_{#gamma}^{GEN}(matched) / N_{#gamma}^{GEN}(all)", numGENptBins,0,maxGENpt);
-    h[40] = new TH1D("fakeRatio_RECOpT",   "fake rate = N_{#gamma}^{RECO}(fake) / N_{#gamma}^{RECO}(all);RECO p_{T} (GeV);N_{#gamma}^{RECO}(fake) / N_{#gamma}^{RECO}(all)",             numGENptBins,0,maxGENpt);
-    h[41] = new TH1D("matchRatio_cent",   "matching efficiency = N_{#gamma}^{GEN}(matched) / N_{#gamma}^{GEN}(all);hiBin;N_{#gamma}^{GEN}(matched) / N_{#gamma}^{GEN}(all)",  numCentBins,0,maxCent);
-    h[42] = new TH1D("fakeRatio_cent",    "fake rate = N_{#gamma}^{RECO}(fake) / N_{#gamma}^{RECO}(all);hiBin;N_{#gamma}^{RECO}(fake) / N_{#gamma}^{RECO}(all)",              numCentBins,0,maxCent);
+    h[39] = new TH1D("matchRatio_GENpT",  "matching efficiency = N_{#gamma}^{GEN}(matched) / N_{#gamma}^{GEN}(all);GEN p_{T} (GeV);N_{#gamma}^{GEN}(matched) / N_{#gamma}^{GEN}(all)", numGENptBins, GENptBins_arr);
+    h[40] = new TH1D("fakeRatio_RECOpT",   "fake rate = N_{#gamma}^{RECO}(fake) / N_{#gamma}^{RECO}(all);RECO p_{T} (GeV);N_{#gamma}^{RECO}(fake) / N_{#gamma}^{RECO}(all)",             numGENptBins, GENptBins_arr);
+    h[41] = new TH1D("matchRatio_cent",   "matching efficiency = N_{#gamma}^{GEN}(matched) / N_{#gamma}^{GEN}(all);hiBin;N_{#gamma}^{GEN}(matched) / N_{#gamma}^{GEN}(all)",  numCentBins, CentBins_arr);
+    h[42] = new TH1D("fakeRatio_cent",    "fake rate = N_{#gamma}^{RECO}(fake) / N_{#gamma}^{RECO}(all);hiBin;N_{#gamma}^{RECO}(fake) / N_{#gamma}^{RECO}(all)",              numCentBins, CentBins_arr);
     h[43] = new TH1D("matchRatio_eta",   "matching efficiency = N_{#gamma}^{GEN}(matched) / N_{#gamma}^{GEN}(all);#eta^{GEN};N_{#gamma}^{GEN}(matched) / N_{#gamma}^{GEN}(all)",  numEtaBins,-maxEta,maxEta);
     h[44] = new TH1D("fakeRatio_eta",    "fake rate = N_{#gamma}^{RECO}(fake) / N_{#gamma}^{RECO}(all);#eta^{RECO};N_{#gamma}^{RECO}(fake) / N_{#gamma}^{RECO}(all)",             numEtaBins,-maxEta,maxEta);
-
-//    h[45] = new TH1D("trkIso_recoPhotons",         "track Iso - RECO photons;track Iso",100,-100,100);
-//    h[46] = new TH1D("trkIso_recoPhotons_matched", "track Iso - matched RECO photons (matched to GEN);track Iso" ,100,-100,100);
-//    h[47] = new TH1D("trkIso_recoPhotons_fake",    "track Iso - fake RECO photons (not matched to GEN);track Iso",100,-100,100);
 
     h[45] = new TH1D("trkIso_recoPhotons",         "track Iso - RECO photons;track Iso",100,-50,150);
     h[46] = new TH1D("trkIso_recoPhotons_matched", "track Iso - matched RECO photons (matched to GEN);track Iso" ,100,-50,150);
@@ -1058,7 +1060,7 @@ std::vector<TH1*> gedPhotonAnalyzer(TFile* inputFile, const char* treePath,
         // fake ratio as fnc. of eta
         n = fakeRatio_eta[2][r];
         if (n>0) {
-            ratio = fakeRatio_eta[0][r]/n;
+            ratio = fakeRatio_cent[0][r]/n;
             h[44]->SetBinContent(r+1,ratio);
             h[44]->SetBinError  (r+1,ratio/TMath::Sqrt(n));
         }
